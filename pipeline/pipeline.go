@@ -31,6 +31,7 @@ type downstreamImpl struct {
 
 func New(ctx context.Context) Downstream {
 	ctx, cancel := context.WithCancel(ctx)
+
 	return &downstreamImpl{cancel: cancel, ctx: ctx}
 }
 
@@ -39,6 +40,7 @@ func (g *downstreamImpl) Wait() error {
 	g.errOnce.Do(func() {
 		g.cancel()
 	})
+	
 	return g.err
 }
 
@@ -74,12 +76,14 @@ func (g *downstreamImpl) Done() <-chan struct{} {
 func (g *downstreamImpl) New() Downstream {
 	ctx, cancel := context.WithCancel(g.ctx)
 
-	g.Run(func() error {
-		return g.Wait()
-	})
-
-	return &downstreamImpl{
+	downstream := &downstreamImpl{
 		cancel:  cancel,
 		ctx:     ctx,
 	}
+
+	g.Run(func() error {
+		return downstream.Wait()
+	})
+
+	return downstream
 }
